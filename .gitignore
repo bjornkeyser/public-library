@@ -39,3 +39,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# database
+*.db
+
+# uploaded/scanned content
+/public/magazines/
+/public/pages/
+/data/
+
+# screenshots
+/screenshots/
+
+# OCR
+*.traineddata
+testOCRoutput.txt
+
+# test files
+test-*.ts

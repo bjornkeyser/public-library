@@ -1,4 +1,4 @@
-import { db, magazines, skaters, spots, photographers, brands, tricks, events, locations } from "@/lib/db";
+import { db, magazines, skaters, spots, photographers, brands, tricks, events } from "@/lib/db";
 import Link from "next/link";
 import { SearchFilters } from "@/components/search-filters";
 import { MagazineStack } from "@/components/magazine-stack";
@@ -12,7 +12,6 @@ export default async function Home() {
   const allBrands = db.select().from(brands).all();
   const allTricks = db.select().from(tricks).all();
   const allEvents = db.select().from(events).all();
-  const allLocations = db.select().from(locations).all();
 
   // Build entity list for autocomplete
   const entityOptions = [
@@ -22,7 +21,6 @@ export default async function Home() {
     ...allBrands.map(b => ({ type: "brand", id: b.id, name: b.name })),
     ...allTricks.map(t => ({ type: "trick", id: t.id, name: t.name })),
     ...allEvents.map(e => ({ type: "event", id: e.id, name: e.name })),
-    ...allLocations.map(l => ({ type: "location", id: l.id, name: l.name })),
   ].sort((a, b) => a.name.localeCompare(b.name));
 
   // Get unique magazine titles
@@ -43,7 +41,6 @@ export default async function Home() {
   const brandCount = allBrands.length;
   const trickCount = allTricks.length;
   const eventCount = allEvents.length;
-  const locationCount = allLocations.length;
 
   // Get magazines with covers for the stack
   const magazinesWithCovers = allMagazines
@@ -82,7 +79,7 @@ export default async function Home() {
         </section>
 
         {/* Stats */}
-        <section className="mb-12 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">
+        <section className="mb-12 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
           <StatCard label="Magazines" count={magazineCount} href="/magazines" />
           <StatCard label="Skaters" count={skaterCount} href="/skaters" />
           <StatCard label="Spots" count={spotCount} href="/spots" />
@@ -90,9 +87,7 @@ export default async function Home() {
           <StatCard label="Brands" count={brandCount} href="/brands" />
           <StatCard label="Tricks" count={trickCount} href="/tricks" />
           <StatCard label="Events" count={eventCount} href="/events" />
-          <StatCard label="Locations" count={locationCount} href="/locations" />
         </section>
-
       </main>
 
       {/* Footer */}

@@ -82,7 +82,7 @@ export default async function Home() {
         </section>
 
         {/* Stats */}
-        <section className="mb-12 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">
+        <section className="mb-12 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
           <StatCard label="Magazines" count={magazineCount} href="/magazines" />
           <StatCard label="Skaters" count={skaterCount} href="/skaters" />
           <StatCard label="Spots" count={spotCount} href="/spots" />
@@ -90,9 +90,7 @@ export default async function Home() {
           <StatCard label="Brands" count={brandCount} href="/brands" />
           <StatCard label="Tricks" count={trickCount} href="/tricks" />
           <StatCard label="Events" count={eventCount} href="/events" />
-          <StatCard label="Locations" count={locationCount} href="/locations" />
         </section>
-
       </main>
 
       {/* Footer */}
