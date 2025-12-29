@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Jost } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
+import { Providers } from "@/components/providers";
 
 const jost = Jost({
   variable: "--font-jost",
@@ -22,8 +23,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${jost.variable} font-sans antialiased`}>
-        <SiteHeader />
-        {children}
+        <Providers>
+          <SiteHeader />
+          {children}
+        </Providers>
       </body>
     </html>
   );

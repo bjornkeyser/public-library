@@ -394,7 +394,7 @@ export default async function SearchPage({ searchParams }: Props) {
                     {skaterResults.map((skater) => (
                       <Link
                         key={skater.id}
-                        href={getEntityLink("skater", skater.id, skater.name)}
+                        href={`/skaters/${skater.id}`}
                         className="flex items-center justify-between border border-[#ebebeb] px-4 py-3 transition-colors hover:border-[#3a3a3a]"
                       >
                         <span className="font-medium">{skater.name}</span>
@@ -415,7 +415,7 @@ export default async function SearchPage({ searchParams }: Props) {
                     {spotResults.map((spot) => (
                       <Link
                         key={spot.id}
-                        href={getEntityLink("spot", spot.id, spot.name)}
+                        href={`/spots/${spot.id}`}
                         className="flex items-center justify-between border border-[#ebebeb] px-4 py-3 transition-colors hover:border-[#3a3a3a]"
                       >
                         <span className="font-medium">{spot.name}</span>
@@ -436,7 +436,7 @@ export default async function SearchPage({ searchParams }: Props) {
                     {brandResults.map((brand) => (
                       <Link
                         key={brand.id}
-                        href={getEntityLink("brand", brand.id, brand.name)}
+                        href={`/brands/${brand.id}`}
                         className="flex items-center justify-between border border-[#ebebeb] px-4 py-3 transition-colors hover:border-[#3a3a3a]"
                       >
                         <span className="font-medium">{brand.name}</span>
@@ -457,7 +457,7 @@ export default async function SearchPage({ searchParams }: Props) {
                     {photographerResults.map((photographer) => (
                       <Link
                         key={photographer.id}
-                        href={getEntityLink("photographer", photographer.id, photographer.name)}
+                        href={`/photographers/${photographer.id}`}
                         className="flex items-center justify-between border border-[#ebebeb] px-4 py-3 transition-colors hover:border-[#3a3a3a]"
                       >
                         <span className="font-medium">{photographer.name}</span>
@@ -478,7 +478,7 @@ export default async function SearchPage({ searchParams }: Props) {
                     {trickResults.map((trick) => (
                       <Link
                         key={trick.id}
-                        href={getEntityLink("trick", trick.id, trick.name)}
+                        href={`/tricks/${trick.id}`}
                         className="flex items-center justify-between border border-[#ebebeb] px-4 py-3 transition-colors hover:border-[#3a3a3a]"
                       >
                         <span className="font-medium">{trick.name}</span>
@@ -499,7 +499,7 @@ export default async function SearchPage({ searchParams }: Props) {
                     {eventResults.map((event) => (
                       <Link
                         key={event.id}
-                        href={getEntityLink("event", event.id, event.name)}
+                        href={`/events/${event.id}`}
                         className="flex items-center justify-between border border-[#ebebeb] px-4 py-3 transition-colors hover:border-[#3a3a3a]"
                       >
                         <span className="font-medium">{event.name}</span>

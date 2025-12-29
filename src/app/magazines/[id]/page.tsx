@@ -5,6 +5,10 @@ import { notFound } from "next/navigation";
 import { CollapsibleSection } from "@/components/collapsible-section";
 import { BackButton } from "@/components/back-button";
 import { FlipCover } from "@/components/flip-cover";
+import { MediaActions, MediaStatsInline } from "@/components/media-actions";
+import { PageThumbnails } from "@/components/page-thumbnails";
+import { getCollectionStatus, getCollectionStats } from "@/lib/actions/collection";
+import { getUserRating, getMediaRatings } from "@/lib/actions/ratings";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -126,24 +130,30 @@ export default async function MagazineDetailPage({ params }: Props) {
   const sortedPages = [...pages].sort((a, b) => a.pageNumber - b.pageNumber);
   const firstPage = sortedPages[0];
 
+  // Collection and rating features - media ID matches magazine ID since we migrated with same IDs
+  const [collectionStatus, collectionStats, userRating, ratingStats] = await Promise.all([
+    getCollectionStatus(magazineId),
+    getCollectionStats(magazineId),
+    getUserRating(magazineId),
+    getMediaRatings(magazineId),
+  ]);
+
   return (
     <div className="min-h-screen bg-white text-[#3a3a3a]">
       {/* Header */}
       <header className="border-b border-[#ebebeb]">
         <div className="container mx-auto px-4 py-6">
           <BackButton fallbackHref="/magazines" fallbackLabel="All Magazines" />
-          <div className="flex items-center gap-4 mt-2">
+          <div className="flex items-center justify-between mt-2">
             <h1 className="text-3xl font-semibold tracking-tight">
               {magazine.title}
             </h1>
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              magazine.status === "published" ? "bg-green-100 text-green-800" :
-              magazine.status === "review" ? "bg-amber-100 text-amber-800" :
-              magazine.status === "processing" ? "bg-blue-100 text-blue-800" :
-              "bg-[#f6f6f6] text-[#666]"
-            }`}>
-              {magazine.status}
-            </span>
+            <MediaStatsInline
+              haveCount={collectionStats.haveCount}
+              wantCount={collectionStats.wantCount}
+              averageRating={ratingStats.averageRating}
+              totalRatings={ratingStats.totalRatings}
+            />
           </div>
           <p className="mt-1 text-[#666]">
             {magazine.volume && `Volume ${magazine.volume}`}
@@ -168,68 +178,97 @@ export default async function MagazineDetailPage({ params }: Props) {
               firstPageImage={firstPage?.imagePath}
             />
 
-            {/* Page thumbnails - compact grid */}
+            {/* Collection + Rating actions */}
+            <MediaActions
+              mediaId={magazineId}
+              initialCollectionStatus={collectionStatus}
+              initialUserRating={userRating}
+            />
+
+            {/* Page thumbnails - collapsible */}
             {pages.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs uppercase tracking-wide text-[#999]">Pages</span>
-                  <Link
-                    href={`/magazines/${magazineId}/review`}
-                    className="text-xs text-[#666] hover:text-[#3a3a3a] underline underline-offset-2"
-                  >
-                    Review Extractions
-                  </Link>
-                </div>
-                <div className="grid grid-cols-8 gap-1">
-                  {sortedPages.map((page) => (
-                    <Link
-                      key={page.id}
-                      href={`/magazines/${magazineId}/page/${page.pageNumber}`}
-                      className="aspect-[3/4] bg-[#f6f6f6] border border-[#ebebeb] hover:border-[#3a3a3a] transition-colors overflow-hidden"
-                      title={`Page ${page.pageNumber}`}
-                    >
-                      {page.imagePath ? (
-                        <img
-                          src={page.imagePath}
-                          alt={`Page ${page.pageNumber}`}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[8px] text-[#999]">
-                          {page.pageNumber}
-                        </div>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              <PageThumbnails
+                pages={sortedPages}
+                magazineId={magazineId}
+                initialVisible={16}
+              />
             )}
           </div>
 
           {/* Right column: Entity sections */}
           <div className="space-y-0">
-          {/* Skaters */}
+          {/* Skaters - grouped by context */}
           {sortedSkaters.length > 0 && (
             <CollapsibleSection title="Skaters" count={sortedSkaters.length}>
-              <div className="flex flex-wrap gap-2">
-                {sortedSkaters.map((skater) => {
+              {(() => {
+                // Group skaters by context category
+                const contextGroups: Record<string, { label: string; skaters: typeof sortedSkaters }> = {
+                  cover: { label: "Cover", skaters: [] },
+                  photo: { label: "Photos", skaters: [] },
+                  feature: { label: "Features", skaters: [] },
+                  interview: { label: "Interviews", skaters: [] },
+                  contest: { label: "Contest Results", skaters: [] },
+                  other: { label: "Other Mentions", skaters: [] },
+                };
+
+                // Map contexts to groups
+                const contextMapping: Record<string, string> = {
+                  "cover": "cover",
+                  "back cover": "cover",
+                  "photo": "photo",
+                  "photo caption": "photo",
+                  "photo_caption": "photo",
+                  "feature": "feature",
+                  "interview": "interview",
+                  "contest_results": "contest",
+                  "contest_participant": "contest",
+                  "contest": "contest",
+                  "new_pro": "feature",
+                };
+
+                sortedSkaters.forEach((skater) => {
                   const appearance = skaterAppearances.find((a) => a.entityId === skater.id);
-                  const pageNums = appearance?.pageNumbers as number[] | undefined;
-                  return (
-                    <Link
-                      key={skater.id}
-                      href={getEntityPageLink(magazineId, pageNums || [], "skater", skater.id, skater.name)}
-                      className="inline-flex items-center gap-2 border border-[#ebebeb] px-3 py-1.5 text-sm hover:border-[#3a3a3a] transition-colors"
-                    >
-                      <span className="font-medium">{skater.name}</span>
-                      {pageNums && pageNums.length > 0 && (
-                        <span className="text-xs text-[#999]">p.{pageNums.join(",")}</span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
+                  const context = appearance?.context || "other";
+                  const group = contextMapping[context] || "other";
+                  contextGroups[group].skaters.push(skater);
+                });
+
+                // Render groups that have skaters
+                const groupOrder = ["cover", "photo", "feature", "interview", "contest", "other"];
+                return (
+                  <div className="space-y-4">
+                    {groupOrder.map((groupKey) => {
+                      const group = contextGroups[groupKey];
+                      if (group.skaters.length === 0) return null;
+                      return (
+                        <div key={groupKey}>
+                          <h4 className="text-xs uppercase tracking-wide text-[#999] mb-2">
+                            {group.label} ({group.skaters.length})
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {group.skaters.map((skater) => {
+                              const appearance = skaterAppearances.find((a) => a.entityId === skater.id);
+                              const pageNums = appearance?.pageNumbers as number[] | undefined;
+                              return (
+                                <Link
+                                  key={skater.id}
+                                  href={getEntityPageLink(magazineId, pageNums || [], "skater", skater.id, skater.name)}
+                                  className="inline-flex items-center gap-2 border border-[#ebebeb] px-3 py-1.5 text-sm hover:border-[#3a3a3a] transition-colors"
+                                >
+                                  <span className="font-medium">{skater.name}</span>
+                                  {pageNums && pageNums.length > 0 && (
+                                    <span className="text-xs text-[#999]">p.{pageNums.join(",")}</span>
+                                  )}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </CollapsibleSection>
           )}
 

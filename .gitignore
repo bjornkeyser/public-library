@@ -57,3 +57,6 @@ testOCRoutput.txt
 
 # test files
 test-*.ts
+
+# User uploads
+/public/uploads/

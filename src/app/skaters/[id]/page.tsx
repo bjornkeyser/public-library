@@ -1,6 +1,7 @@
-import { db, skaters, magazineAppearances, magazines } from "@/lib/db";
+import { db, skaters, magazineAppearances, magazines, trickMentions, tricks, spots } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { EntityTimeline } from "@/components/entity-timeline";
 import { BackButton } from "@/components/back-button";
 
@@ -20,7 +21,34 @@ export default async function SkaterDetailPage({ params }: Props) {
     .all()
     .filter((a) => a.entityType === "skater");
 
+  // Get trick mentions for this skater
+  const mentions = db
+    .select()
+    .from(trickMentions)
+    .where(eq(trickMentions.skaterId, skaterId))
+    .all();
+
+  const allTricks = db.select().from(tricks).all();
+  const allSpots = db.select().from(spots).all();
   const allMagazines = db.select().from(magazines).all();
+
+  // Group by trick
+  const trickCounts = new Map<number, { trick: typeof allTricks[0], count: number, spots: string[] }>();
+  mentions.forEach((m) => {
+    const existing = trickCounts.get(m.trickId);
+    const spot = m.spotId ? allSpots.find((s) => s.id === m.spotId)?.name : null;
+    if (existing) {
+      existing.count++;
+      if (spot && !existing.spots.includes(spot)) existing.spots.push(spot);
+    } else {
+      const trick = allTricks.find((t) => t.id === m.trickId);
+      if (trick) {
+        trickCounts.set(m.trickId, { trick, count: 1, spots: spot ? [spot] : [] });
+      }
+    }
+  });
+
+  const sortedTrickCounts = Array.from(trickCounts.values()).sort((a, b) => b.count - a.count);
 
   const magazineAppearancesList = appearances.map((a) => {
     const mag = allMagazines.find((m) => m.id === a.magazineId);
@@ -53,10 +81,42 @@ export default async function SkaterDetailPage({ params }: Props) {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <section>
-          <h2 className="mb-6 text-lg font-semibold uppercase tracking-wide">Timeline</h2>
-          <EntityTimeline items={magazineAppearancesList} entityName={skater.name} entityType="skater" entityId={skaterId} />
-        </section>
+        <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
+          <div>
+            <section>
+              <h2 className="mb-6 text-lg font-semibold uppercase tracking-wide">Timeline</h2>
+              <EntityTimeline items={magazineAppearancesList} entityName={skater.name} entityType="skater" entityId={skaterId} />
+            </section>
+          </div>
+
+          {/* Sidebar: Tricks performed */}
+          {sortedTrickCounts.length > 0 && (
+            <div>
+              <section>
+                <h2 className="mb-4 text-lg font-semibold uppercase tracking-wide">Tricks</h2>
+                <div className="space-y-2">
+                  {sortedTrickCounts.map(({ trick, count, spots }) => (
+                    <Link
+                      key={trick.id}
+                      href={`/tricks/${trick.id}`}
+                      className="block border border-[#ebebeb] px-3 py-2 hover:border-[#3a3a3a] transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{trick.name}</span>
+                        <span className="text-xs text-[#999]">{count}x</span>
+                      </div>
+                      {spots.length > 0 && (
+                        <div className="text-xs text-[#666] mt-0.5">
+                          at {spots.slice(0, 2).join(", ")}{spots.length > 2 && ` +${spots.length - 2} more`}
+                        </div>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

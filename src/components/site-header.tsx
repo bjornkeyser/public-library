@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { UserMenu } from "./user-menu";
 
 const NAV_LINKS = [
   { href: "/magazines", label: "Magazines" },
+  { href: "/videos", label: "Videos" },
   { href: "/skaters", label: "Skaters" },
   { href: "/spots", label: "Spots" },
   { href: "/photographers", label: "Photographers" },
   { href: "/brands", label: "Brands" },
   { href: "/map", label: "Map" },
+  { href: "/contribute", label: "Contribute", highlight: true },
 ];
 
 export function SiteHeader() {
@@ -39,11 +42,19 @@ export function SiteHeader() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm text-[#666] hover:text-[#3a3a3a] transition-colors"
+                className={`text-sm transition-colors ${
+                  link.highlight
+                    ? "text-[#3a3a3a] font-medium hover:text-[#666]"
+                    : "text-[#666] hover:text-[#3a3a3a]"
+                }`}
               >
+                {link.highlight && <span className="mr-1">+</span>}
                 {link.label}
               </Link>
             ))}
+            <div className="ml-2 pl-4 border-l border-[#ebebeb]">
+              <UserMenu />
+            </div>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -75,11 +86,19 @@ export function SiteHeader() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsMenuOpen(false)}
-                className="block py-3 text-[#3a3a3a] border-b border-[#ebebeb] last:border-b-0 hover:text-[#666] transition-colors"
+                className={`block py-3 border-b border-[#ebebeb] transition-colors ${
+                  link.highlight
+                    ? "text-[#3a3a3a] font-medium"
+                    : "text-[#3a3a3a] hover:text-[#666]"
+                }`}
               >
+                {link.highlight && <span className="mr-1">+</span>}
                 {link.label}
               </Link>
             ))}
+            <div className="py-3">
+              <UserMenu />
+            </div>
           </div>
         </nav>
       )}

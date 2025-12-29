@@ -1,4 +1,4 @@
-import { db, spots, magazineAppearances, magazines, locations } from "@/lib/db";
+import { db, spots, magazineAppearances, magazines, locations, trickMentions, tricks, skaters } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -26,7 +26,34 @@ export default async function SpotDetailPage({ params }: Props) {
     .all()
     .filter((a) => a.entityType === "spot");
 
+  // Get trick mentions at this spot
+  const mentions = db
+    .select()
+    .from(trickMentions)
+    .where(eq(trickMentions.spotId, spotId))
+    .all();
+
+  const allTricks = db.select().from(tricks).all();
+  const allSkaters = db.select().from(skaters).all();
   const allMagazines = db.select().from(magazines).all();
+
+  // Group by trick
+  const trickCounts = new Map<number, { trick: typeof allTricks[0], count: number, skaters: string[] }>();
+  mentions.forEach((m) => {
+    const existing = trickCounts.get(m.trickId);
+    const skater = m.skaterId ? allSkaters.find((s) => s.id === m.skaterId)?.name : null;
+    if (existing) {
+      existing.count++;
+      if (skater && !existing.skaters.includes(skater)) existing.skaters.push(skater);
+    } else {
+      const trick = allTricks.find((t) => t.id === m.trickId);
+      if (trick) {
+        trickCounts.set(m.trickId, { trick, count: 1, skaters: skater ? [skater] : [] });
+      }
+    }
+  });
+
+  const sortedTrickCounts = Array.from(trickCounts.values()).sort((a, b) => b.count - a.count);
 
   const magazineAppearancesList = appearances.map((a) => {
     const mag = allMagazines.find((m) => m.id === a.magazineId);
@@ -142,10 +169,40 @@ export default async function SpotDetailPage({ params }: Props) {
           </section>
         )}
 
-        <section>
-          <h2 className="mb-6 text-lg font-semibold uppercase tracking-wide">Timeline</h2>
-          <EntityTimeline items={magazineAppearancesList} entityName={spot.name} entityType="spot" entityId={spotId} />
-        </section>
+        <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
+          <section>
+            <h2 className="mb-6 text-lg font-semibold uppercase tracking-wide">Timeline</h2>
+            <EntityTimeline items={magazineAppearancesList} entityName={spot.name} entityType="spot" entityId={spotId} />
+          </section>
+
+          {/* Sidebar: Tricks done here */}
+          {sortedTrickCounts.length > 0 && (
+            <div>
+              <section>
+                <h2 className="mb-4 text-lg font-semibold uppercase tracking-wide">Tricks Done Here</h2>
+                <div className="space-y-2">
+                  {sortedTrickCounts.map(({ trick, count, skaters: skaterNames }) => (
+                    <Link
+                      key={trick.id}
+                      href={`/tricks/${trick.id}`}
+                      className="block border border-[#ebebeb] px-3 py-2 hover:border-[#3a3a3a] transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{trick.name}</span>
+                        <span className="text-xs text-[#999]">{count}x</span>
+                      </div>
+                      {skaterNames.length > 0 && (
+                        <div className="text-xs text-[#666] mt-0.5">
+                          by {skaterNames.slice(0, 2).join(", ")}{skaterNames.length > 2 && ` +${skaterNames.length - 2} more`}
+                        </div>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
